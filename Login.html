@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial; background:#f4f7f6; display:flex; align-items:center; justify-content:center; height:100vh; }
+    .box { background:#fff; padding:2rem; border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,0.1); width:300px; text-align:center; }
+    input { width:100%; padding:0.7rem; margin:0.5rem 0; border:1px solid #ddd; border-radius:8px; }
+    button { background:#3498db; color:#fff; padding:0.8rem; border:none; border-radius:8px; cursor:pointer; width:100%; font-weight:bold; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Agent Login</h2>
+    <input type="text" id="name" placeholder="Enter Name">
+    <input type="email" id="email" placeholder="Enter Email">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <script>
+    function login() {
+      const name=document.getElementById("name").value.trim();
+      const email=document.getElementById("email").value.trim();
+      if(!name||!email){alert("Enter name and email");return;}
+      localStorage.setItem("user",JSON.stringify({name,email}));
+      window.location.href="Welcome.html";
+    }
+  </script>
+</body>
+</html>
