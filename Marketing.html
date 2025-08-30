@@ -2,55 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agent Check-In/Out</title>
   <style>
-    :root {
-      --primary-color: #3498db;
-      --secondary-color: #2ecc71;
-      --background-color: #f4f7f6;
-      --card-background: #ffffff;
-      --text-color: #333;
-      --border-color: #ddd;
-      --shadow-light: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background-color: var(--background-color); }
-    header { background-color: var(--primary-color); color: white; padding: 1rem; text-align: center; }
-    .screen { background-color: var(--card-background); padding: 1.5rem; border-radius: 12px; margin: 1rem auto; max-width: 600px; box-shadow: var(--shadow-light); }
-    .screen.hidden { display: none; }
-    h2 { color: var(--primary-color); text-align: center; margin-bottom: 1rem; }
-    .form-group { margin-bottom: 1rem; }
-    label { font-weight: bold; display: block; margin-bottom: .5rem; }
-    input, select, textarea { width: 100%; padding: .8rem; border: 1px solid var(--border-color); border-radius: 8px; }
-    button { width: 100%; padding: 1rem; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: .5rem; }
-    button.main-btn { background: var(--primary-color); }
-    button.submit-btn { background: var(--secondary-color); }
-    button.back-btn { background: #95a5a6; }
-    #status-message { text-align: center; font-weight: bold; margin: .5rem 0; padding: .5rem; border-radius: 8px; }
-    #status-message.success { background: #d4edda; color: #155724; }
-    #status-message.error { background: #f8d7da; color: #721c24; }
-    video, img { width: 100%; border-radius: 8px; margin-top: .5rem; }
+    :root { --primary:#3498db; --bg:#f4f7f6; }
+    body{font-family:Arial;background:var(--bg);margin:0;}
+    header{background:var(--primary);color:#fff;padding:1rem;text-align:center;}
+    .screen{max-width:600px;margin:1rem auto;background:#fff;padding:1rem;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,.1);}
+    h2{color:var(--primary);text-align:center;}
+    label{font-weight:bold;display:block;margin-top:1rem;}
+    input,select,textarea{width:100%;padding:.7rem;margin-top:.3rem;border:1px solid #ddd;border-radius:8px;}
+    button{width:100%;margin-top:1rem;padding:1rem;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
+    .main-btn{background:var(--primary);color:#fff;}
+    .back-btn{background:#888;color:#fff;}
+    video,img{width:100%;border-radius:8px;margin-top:.5rem;}
+    .hidden{display:none;}
+    .success{color:green;text-align:center;}
+    .error{color:red;text-align:center;}
   </style>
 </head>
 <body>
-  <header>
-    <div id="user-info"></div>
-  </header>
-
+  <header><div id="user-info"></div></header>
   <main>
-    <!-- Login -->
-    <div id="login-screen" class="screen">
-      <h2>Login</h2>
-      <form id="login-form">
-        <input type="text" id="name" placeholder="Name" required>
-        <input type="email" id="email" placeholder="Email" required>
-        <button type="submit" class="submit-btn">Login</button>
-      </form>
-    </div>
-
-    <!-- Dashboard -->
-    <div id="dashboard-screen" class="screen hidden">
+    <div id="dashboard-screen" class="screen">
       <p id="status-message"></p>
       <button id="check-in-btn" class="main-btn">Check In</button>
       <button id="check-out-btn" class="main-btn">Check Out</button>
@@ -60,23 +34,19 @@
     <div id="check-in-screen" class="screen hidden">
       <h2>Check-In</h2>
       <form id="check-in-form">
-        <div class="form-group">
-          <label>Planned a route today?</label>
-          <select id="planned-route" required>
-            <option value="">Select...</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Select Route</label>
-          <select id="route-list-in" required></select>
-        </div>
-        <div class="form-group hidden" id="custom-route-group-in">
-          <label>Enter Custom Route</label>
-          <input type="text" id="custom-route-in">
-        </div>
-        <button type="submit" class="submit-btn">Submit Check-In</button>
+        <label>Planned Route?</label>
+        <select id="planned-route" required>
+          <option value="">Select...</option>
+          <option value="Yes">Yes</option><option value="No">No</option>
+        </select>
+        <label>Select Route</label>
+        <select id="route-list-in" required></select>
+        <label>Take Meter Reading Photo</label>
+        <video id="video-in" autoplay playsinline></video>
+        <img id="photo-preview-in" class="hidden">
+        <button type="button" id="start-camera-in">Open Camera</button>
+        <button type="button" id="snap-photo-in" class="hidden">Snap Photo</button>
+        <button type="submit" class="main-btn">Submit Check-In</button>
         <button type="button" class="back-btn">Back</button>
       </form>
     </div>
@@ -85,172 +55,64 @@
     <div id="check-out-screen" class="screen hidden">
       <h2>Check-Out</h2>
       <form id="check-out-form">
-        <div class="form-group">
-          <label>Completed Route</label>
-          <select id="route-list-out" required></select>
+        <label>Completed Route</label>
+        <select id="route-list-out" required></select>
+        <label>Photo/Receipt Option</label>
+        <select id="photo-option" required>
+          <option value="none">No Photo</option>
+          <option value="meter">Meter Reading</option>
+          <option value="ticket">Ticket/Receipt</option>
+        </select>
+        <div id="photo-upload-section" class="hidden">
+          <video id="video-out" autoplay playsinline></video>
+          <img id="photo-preview-out" class="hidden">
+          <button type="button" id="start-camera-out">Open Camera</button>
+          <button type="button" id="snap-photo-out" class="hidden">Snap Photo</button>
         </div>
-        <div class="form-group hidden" id="custom-route-group-out">
-          <label>Enter Custom Route</label>
-          <input type="text" id="custom-route-out">
-        </div>
-        <div class="form-group">
-          <label>Travel Cost</label>
-          <input type="number" id="travel-cost" min="0">
-        </div>
-        <div class="form-group">
-          <label>Stay Cost</label>
-          <input type="number" id="stay-cost" min="0">
-        </div>
-        <div class="form-group">
-          <label>Food Cost</label>
-          <input type="number" id="food-cost" min="0">
-        </div>
-        <div class="form-group">
-          <label>Notes</label>
-          <textarea id="notes" rows="3"></textarea>
-        </div>
-        <button type="submit" class="submit-btn">Submit Check-Out</button>
+        <label>Travel Cost</label><input type="number" id="travel-cost">
+        <label>Stay Cost</label><input type="number" id="stay-cost">
+        <label>Food Cost</label><input type="number" id="food-cost">
+        <label>Notes</label><textarea id="notes"></textarea>
+        <button type="submit" class="main-btn">Submit Check-Out</button>
         <button type="button" class="back-btn">Back</button>
       </form>
     </div>
   </main>
 
-  <script>
-    const SPREADSHEET_URL = "https://script.google.com/macros/s/AKfycbzWfSo5FV1jGz3SrXfu6pZqUTmgfL8WGuyWAASzHMepr5XMVEGEHA46Sn-fq6itrUWR/exec";
+<script>
+const SPREADSHEET_URL = "https://script.google.com/macros/s/AKfycbyDkqGz9MARgSyl54RKqxi57I1EaNc8iVtAPy3M0rl3xGN-0XehAQrDZBTea8EzjzeG/exec";
 
-    const userInfoHeader = document.getElementById('user-info');
-    const loginForm = document.getElementById('login-form');
-    const dashboardScreen = document.getElementById('dashboard-screen');
-    const checkInScreen = document.getElementById('check-in-screen');
-    const checkOutScreen = document.getElementById('check-out-screen');
-    const statusMessage = document.getElementById('status-message');
+let currentUser=null;
+try{currentUser=JSON.parse(localStorage.getItem("user"));}catch(e){}
+if(!currentUser||!currentUser.email){window.location.href="login.html";}
+document.getElementById("user-info").textContent="Logged in as: "+currentUser.email;
 
-    const routeListIn = document.getElementById('route-list-in');
-    const customRouteGroupIn = document.getElementById('custom-route-group-in');
-    const customRouteIn = document.getElementById('custom-route-in');
+function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");}
+function showMessage(msg,type){const el=document.getElementById("status-message");el.textContent=msg;el.className=type;}
 
-    const routeListOut = document.getElementById('route-list-out');
-    const customRouteGroupOut = document.getElementById('custom-route-group-out');
-    const customRouteOut = document.getElementById('custom-route-out');
+async function fetchRoutes(email){const r=await fetch(`${SPREADSHEET_URL}?action=getRoutes&email=${encodeURIComponent(email)}`);const d=await r.json();return d.status==="success"?d.routes:[];}
+async function populateRoutes(sel){const routes=await fetchRoutes(currentUser.email);sel.innerHTML='<option value="">Select...</option>';routes.forEach(rt=>{const o=document.createElement("option");o.value=rt;o.textContent=rt;sel.appendChild(o);});}
+async function postData(obj){const r=await fetch(SPREADSHEET_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(obj)});return await r.json();}
 
-    let currentUser = null;
+let stream=null,photoIn=null,photoOut=null;
+async function openCamera(video,snap,prev){try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});video.srcObject=stream;snap.classList.remove("hidden");prev.classList.add("hidden");}catch(e){alert("Camera not available");}}
+function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());}}
 
-    function showScreen(id) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-      document.getElementById(id).classList.remove('hidden');
-    }
-    function showMessage(msg, type) {
-      statusMessage.textContent = msg;
-      statusMessage.className = type;
-    }
+document.getElementById("check-in-btn").onclick=async()=>{await populateRoutes(document.getElementById("route-list-in"));showScreen("check-in-screen");};
+document.getElementById("check-out-btn").onclick=async()=>{await populateRoutes(document.getElementById("route-list-out"));showScreen("check-out-screen");};
+document.querySelectorAll(".back-btn").forEach(b=>b.onclick=()=>{stopCamera();showScreen("dashboard-screen");});
 
-    async function fetchRoutes() {
-      if (!currentUser || !currentUser.email) {
-        showMessage("Login required.", "error");
-        return [];
-      }
-      try {
-        const url = `${SPREADSHEET_URL}?email=${encodeURIComponent(currentUser.email)}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data.status === "success") return data.routes || [];
-        else throw new Error(data.message);
-      } catch (err) {
-        showMessage("Failed to load routes.", "error");
-        return ["Custom Route"];
-      }
-    }
+const vIn=document.getElementById("video-in"),sIn=document.getElementById("snap-photo-in"),pIn=document.getElementById("photo-preview-in");
+document.getElementById("start-camera-in").onclick=()=>openCamera(vIn,sIn,pIn);
+sIn.onclick=()=>{const c=document.createElement("canvas");c.width=vIn.videoWidth;c.height=vIn.videoHeight;c.getContext("2d").drawImage(vIn,0,0);photoIn=c.toDataURL("image/jpeg",0.7);pIn.src=photoIn;pIn.classList.remove("hidden");stopCamera();};
 
-    async function populateRoutes(selectEl, customGroup) {
-      const routes = await fetchRoutes();
-      selectEl.innerHTML = "";
-      routes.forEach(r => {
-        const opt = document.createElement('option');
-        opt.value = r; opt.textContent = r;
-        selectEl.appendChild(opt);
-      });
-      selectEl.addEventListener('change', () => {
-        customGroup.classList.toggle("hidden", selectEl.value !== "Custom Route");
-      });
-    }
+const vOut=document.getElementById("video-out"),sOut=document.getElementById("snap-photo-out"),pOut=document.getElementById("photo-preview-out");
+document.getElementById("photo-option").onchange=()=>{document.getElementById("photo-upload-section").classList.toggle("hidden",document.getElementById("photo-option").value==="none");};
+document.getElementById("start-camera-out").onclick=()=>openCamera(vOut,sOut,pOut);
+sOut.onclick=()=>{const c=document.createElement("canvas");c.width=vOut.videoWidth;c.height=vOut.videoHeight;c.getContext("2d").drawImage(vOut,0,0);photoOut=c.toDataURL("image/jpeg",0.7);pOut.src=photoOut;pOut.classList.remove("hidden");stopCamera();};
 
-    async function postData(data) {
-      try {
-        const res = await fetch(SPREADSHEET_URL, {
-          method: "POST",
-          body: JSON.stringify(data),
-          headers: { "Content-Type": "application/json" }
-        });
-        return await res.json();
-      } catch {
-        return { status: "error", message: "Network error" };
-      }
-    }
-
-    // Login
-    loginForm.addEventListener('submit', e => {
-      e.preventDefault();
-      const name = document.getElementById('name').value;
-      const email = document.getElementById('email').value;
-      currentUser = { name, email };
-      localStorage.setItem("currentUser", JSON.stringify(currentUser));
-      userInfoHeader.textContent = `Logged in as: ${name}`;
-      showScreen("dashboard-screen");
-    });
-
-    // CheckIn
-    document.getElementById('check-in-btn').addEventListener('click', async () => {
-      await populateRoutes(routeListIn, customRouteGroupIn);
-      showScreen("check-in-screen");
-    });
-
-    document.getElementById('check-in-form').addEventListener('submit', async e => {
-      e.preventDefault();
-      let selectedRoute = routeListIn.value === "Custom Route" ? customRouteIn.value : routeListIn.value;
-      const formData = {
-        type: "CheckIn",
-        name: currentUser.name,
-        email: currentUser.email,
-        route: selectedRoute,
-        planned: document.getElementById('planned-route').value
-      };
-      const result = await postData(formData);
-      showMessage(result.message, result.status);
-      if (result.status === "success") showScreen("dashboard-screen");
-    });
-
-    // CheckOut
-    document.getElementById('check-out-btn').addEventListener('click', async () => {
-      await populateRoutes(routeListOut, customRouteGroupOut);
-      showScreen("check-out-screen");
-    });
-
-    document.getElementById('check-out-form').addEventListener('submit', async e => {
-      e.preventDefault();
-      let selectedRoute = routeListOut.value === "Custom Route" ? customRouteOut.value : routeListOut.value;
-      const formData = {
-        type: "CheckOut",
-        name: currentUser.name,
-        email: currentUser.email,
-        route: selectedRoute,
-        meterOption: "none",
-        travelCost: document.getElementById('travel-cost').value,
-        stayCost: document.getElementById('stay-cost').value,
-        foodCost: document.getElementById('food-cost').value,
-        notes: document.getElementById('notes').value
-      };
-      const result = await postData(formData);
-      showMessage(result.message, result.status);
-      if (result.status === "success") showScreen("dashboard-screen");
-    });
-
-    // Restore session
-    const savedUser = localStorage.getItem("currentUser");
-    if (savedUser) {
-      currentUser = JSON.parse(savedUser);
-      userInfoHeader.textContent = `Logged in as: ${currentUser.name}`;
-      showScreen("dashboard-screen");
-    }
-  </script>
+document.getElementById("check-in-form").onsubmit=async e=>{e.preventDefault();const obj={type:"CheckIn",name:currentUser.name,email:currentUser.email,route:document.getElementById("route-list-in").value,planned:document.getElementById("planned-route").value,photoData:photoIn};const r=await postData(obj);showMessage(r.status==="success"?"Check-In Saved":"Error: "+r.message,r.status);photoIn=null;stopCamera();showScreen("dashboard-screen");};
+document.getElementById("check-out-form").onsubmit=async e=>{e.preventDefault();const obj={type:"CheckOut",name:currentUser.name,email:currentUser.email,route:document.getElementById("route-list-out").value,meterOption:document.getElementById("photo-option").value,travelCost:document.getElementById("travel-cost").value,stayCost:document.getElementById("stay-cost").value,foodCost:document.getElementById("food-cost").value,notes:document.getElementById("notes").value,photoData:photoOut};const r=await postData(obj);showMessage(r.status==="success"?"Check-Out Saved":"Error: "+r.message,r.status);photoOut=null;stopCamera();showScreen("dashboard-screen");};
+</script>
 </body>
 </html>
