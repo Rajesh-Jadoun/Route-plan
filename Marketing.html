@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Agent Check-In/Out</title>
+  <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2ecc71;
+      --background-color: #f4f7f6;
+      --card-background: #ffffff;
+      --text-color: #333;
+      --border-color: #ddd;
+      --shadow-light: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background-color: var(--background-color); }
+    header { background-color: var(--primary-color); color: white; padding: 1rem; text-align: center; }
+    .screen { background-color: var(--card-background); padding: 1.5rem; border-radius: 12px; margin: 1rem auto; max-width: 600px; box-shadow: var(--shadow-light); }
+    .screen.hidden { display: none; }
+    h2 { color: var(--primary-color); text-align: center; margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    label { font-weight: bold; display: block; margin-bottom: .5rem; }
+    input, select, textarea { width: 100%; padding: .8rem; border: 1px solid var(--border-color); border-radius: 8px; }
+    button { width: 100%; padding: 1rem; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: .5rem; }
+    button.main-btn { background: var(--primary-color); }
+    button.submit-btn { background: var(--secondary-color); }
+    button.back-btn { background: #95a5a6; }
+    #status-message { text-align: center; font-weight: bold; margin: .5rem 0; padding: .5rem; border-radius: 8px; }
+    #status-message.success { background: #d4edda; color: #155724; }
+    #status-message.error { background: #f8d7da; color: #721c24; }
+    video, img { width: 100%; border-radius: 8px; margin-top: .5rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div id="user-info"></div>
+  </header>
+
+  <main>
+    <!-- Login -->
+    <div id="login-screen" class="screen">
+      <h2>Login</h2>
+      <form id="login-form">
+        <input type="text" id="name" placeholder="Name" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <button type="submit" class="submit-btn">Login</button>
+      </form>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard-screen" class="screen hidden">
+      <p id="status-message"></p>
+      <button id="check-in-btn" class="main-btn">Check In</button>
+      <button id="check-out-btn" class="main-btn">Check Out</button>
+    </div>
+
+    <!-- Check-In -->
+    <div id="check-in-screen" class="screen hidden">
+      <h2>Check-In</h2>
+      <form id="check-in-form">
+        <div class="form-group">
+          <label>Planned a route today?</label>
+          <select id="planned-route" required>
+            <option value="">Select...</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Select Route</label>
+          <select id="route-list-in" required></select>
+        </div>
+        <div class="form-group hidden" id="custom-route-group-in">
+          <label>Enter Custom Route</label>
+          <input type="text" id="custom-route-in">
+        </div>
+        <button type="submit" class="submit-btn">Submit Check-In</button>
+        <button type="button" class="back-btn">Back</button>
+      </form>
+    </div>
+
+    <!-- Check-Out -->
+    <div id="check-out-screen" class="screen hidden">
+      <h2>Check-Out</h2>
+      <form id="check-out-form">
+        <div class="form-group">
+          <label>Completed Route</label>
+          <select id="route-list-out" required></select>
+        </div>
+        <div class="form-group hidden" id="custom-route-group-out">
+          <label>Enter Custom Route</label>
+          <input type="text" id="custom-route-out">
+        </div>
+        <div class="form-group">
+          <label>Travel Cost</label>
+          <input type="number" id="travel-cost" min="0">
+        </div>
+        <div class="form-group">
+          <label>Stay Cost</label>
+          <input type="number" id="stay-cost" min="0">
+        </div>
+        <div class="form-group">
+          <label>Food Cost</label>
+          <input type="number" id="food-cost" min="0">
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="notes" rows="3"></textarea>
+        </div>
+        <button type="submit" class="submit-btn">Submit Check-Out</button>
+        <button type="button" class="back-btn">Back</button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    const SPREADSHEET_URL = "https://script.google.com/macros/s/AKfycbzWfSo5FV1jGz3SrXfu6pZqUTmgfL8WGuyWAASzHMepr5XMVEGEHA46Sn-fq6itrUWR/exec";
+
+    const userInfoHeader = document.getElementById('user-info');
+    const loginForm = document.getElementById('login-form');
+    const dashboardScreen = document.getElementById('dashboard-screen');
+    const checkInScreen = document.getElementById('check-in-screen');
+    const checkOutScreen = document.getElementById('check-out-screen');
+    const statusMessage = document.getElementById('status-message');
+
+    const routeListIn = document.getElementById('route-list-in');
+    const customRouteGroupIn = document.getElementById('custom-route-group-in');
+    const customRouteIn = document.getElementById('custom-route-in');
+
+    const routeListOut = document.getElementById('route-list-out');
+    const customRouteGroupOut = document.getElementById('custom-route-group-out');
+    const customRouteOut = document.getElementById('custom-route-out');
+
+    let currentUser = null;
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+    function showMessage(msg, type) {
+      statusMessage.textContent = msg;
+      statusMessage.className = type;
+    }
+
+    async function fetchRoutes() {
+      if (!currentUser || !currentUser.email) {
+        showMessage("Login required.", "error");
+        return [];
+      }
+      try {
+        const url = `${SPREADSHEET_URL}?email=${encodeURIComponent(currentUser.email)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.status === "success") return data.routes || [];
+        else throw new Error(data.message);
+      } catch (err) {
+        showMessage("Failed to load routes.", "error");
+        return ["Custom Route"];
+      }
+    }
+
+    async function populateRoutes(selectEl, customGroup) {
+      const routes = await fetchRoutes();
+      selectEl.innerHTML = "";
+      routes.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r; opt.textContent = r;
+        selectEl.appendChild(opt);
+      });
+      selectEl.addEventListener('change', () => {
+        customGroup.classList.toggle("hidden", selectEl.value !== "Custom Route");
+      });
+    }
+
+    async function postData(data) {
+      try {
+        const res = await fetch(SPREADSHEET_URL, {
+          method: "POST",
+          body: JSON.stringify(data),
+          headers: { "Content-Type": "application/json" }
+        });
+        return await res.json();
+      } catch {
+        return { status: "error", message: "Network error" };
+      }
+    }
+
+    // Login
+    loginForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      currentUser = { name, email };
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+      userInfoHeader.textContent = `Logged in as: ${name}`;
+      showScreen("dashboard-screen");
+    });
+
+    // CheckIn
+    document.getElementById('check-in-btn').addEventListener('click', async () => {
+      await populateRoutes(routeListIn, customRouteGroupIn);
+      showScreen("check-in-screen");
+    });
+
+    document.getElementById('check-in-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      let selectedRoute = routeListIn.value === "Custom Route" ? customRouteIn.value : routeListIn.value;
+      const formData = {
+        type: "CheckIn",
+        name: currentUser.name,
+        email: currentUser.email,
+        route: selectedRoute,
+        planned: document.getElementById('planned-route').value
+      };
+      const result = await postData(formData);
+      showMessage(result.message, result.status);
+      if (result.status === "success") showScreen("dashboard-screen");
+    });
+
+    // CheckOut
+    document.getElementById('check-out-btn').addEventListener('click', async () => {
+      await populateRoutes(routeListOut, customRouteGroupOut);
+      showScreen("check-out-screen");
+    });
+
+    document.getElementById('check-out-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      let selectedRoute = routeListOut.value === "Custom Route" ? customRouteOut.value : routeListOut.value;
+      const formData = {
+        type: "CheckOut",
+        name: currentUser.name,
+        email: currentUser.email,
+        route: selectedRoute,
+        meterOption: "none",
+        travelCost: document.getElementById('travel-cost').value,
+        stayCost: document.getElementById('stay-cost').value,
+        foodCost: document.getElementById('food-cost').value,
+        notes: document.getElementById('notes').value
+      };
+      const result = await postData(formData);
+      showMessage(result.message, result.status);
+      if (result.status === "success") showScreen("dashboard-screen");
+    });
+
+    // Restore session
+    const savedUser = localStorage.getItem("currentUser");
+    if (savedUser) {
+      currentUser = JSON.parse(savedUser);
+      userInfoHeader.textContent = `Logged in as: ${currentUser.name}`;
+      showScreen("dashboard-screen");
+    }
+  </script>
+</body>
+</html>
